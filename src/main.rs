@@ -2,25 +2,28 @@
 use std::io::{self, Write};
 
 fn main() {
-    prompt();
-}
+    loop {
+        let input = prompt();
 
-fn prompt() {
-    print!("$ ");
-    io::stdout().flush().unwrap();
-    let input = await_input();
-    let trimmed_input = input.trim();
-
-    if trimmed_input.is_empty() {
-        prompt();
-    } else {
-        println!("{}: command not found", trimmed_input)
+        if !input.is_empty() {
+            command_router(input);
+        }
     }
 }
 
-fn await_input() -> String {
+fn prompt() -> String {
+    print!("$ ");
+    io::stdout().flush().unwrap();
+
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
+    let trimmed_input = input.trim();
 
-    return input;
+    return trimmed_input.to_string();
+}
+
+fn command_router(input: String) {
+    match input {
+        _ => println!("{}: command not found", input),
+    }
 }
