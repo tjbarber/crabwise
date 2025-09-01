@@ -6,6 +6,10 @@ fn main() {
         let input = prompt();
 
         if !input.is_empty() {
+            if input == "exit" {
+                break;
+            }
+
             command_router(input);
         }
     }
