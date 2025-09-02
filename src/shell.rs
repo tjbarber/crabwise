@@ -4,6 +4,7 @@ use std::io::{self, Write};
 use crate::builtins::command::Command;
 use crate::builtins::echo::Echo;
 use crate::builtins::exit::Exit;
+use crate::builtins::r#type::Type;
 
 pub enum ShellAction {
     Continue,
@@ -11,14 +12,17 @@ pub enum ShellAction {
 }
 
 pub struct Shell {
-    builtins: HashMap<String, Box<dyn Command>>,
+    pub builtins: HashMap<String, Box<dyn Command>>,
 }
 
 impl Shell {
     pub fn new() -> Self {
         let mut builtins: HashMap<String, Box<dyn Command>> = HashMap::new();
+
         builtins.insert("exit".into(), Box::new(Exit));
         builtins.insert("echo".into(), Box::new(Echo));
+        builtins.insert("type".into(), Box::new(Type));
+
         Shell { builtins }
     }
 
@@ -51,26 +55,12 @@ impl Shell {
     }
 
     fn execute_command(&self, input: String) -> ShellAction {
-        let split_input = input.split_once(" ");
-        let name;
-        let args;
+        let mut split_input: Vec<&str> = input.split(' ').collect();
+        let args = split_input.split_off(1);
+        let name = split_input[0];
 
-        match split_input {
-            Some((first, remaining)) => {
-                // Come back to this, we need to just split the whole thing,
-                // get the first as the name,
-                // pass the rest as arguments
-                name = first.to_string();
-                args = remaining.to_string();
-            }
-            None => {
-                name = input.to_string();
-                args = String::new();
-            }
-        }
-
-        if let Some(cmd) = self.builtins.get(&name) {
-            return cmd.execute(&args);
+        if let Some(cmd) = self.builtins.get(name) {
+            return cmd.execute(args, &self);
         } else {
             eprintln!("{}: command not found", name);
             // return code 127, probably will need that
