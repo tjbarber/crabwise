@@ -19,6 +19,15 @@ impl BuiltinCommand for Exit {
     }
 }
 
+pub struct Echo;
+
+impl BuiltinCommand for Echo {
+    fn execute(&self, args: &str) -> ShellAction {
+        println!("{}", args.to_string());
+        return ShellAction::Continue(0);
+    }
+}
+
 pub struct Shell {
     builtins: HashMap<String, Box<dyn BuiltinCommand>>,
 }
@@ -27,6 +36,7 @@ impl Shell {
     fn new() -> Self {
         let mut builtins: HashMap<String, Box<dyn BuiltinCommand>> = HashMap::new();
         builtins.insert("exit".into(), Box::new(Exit));
+        builtins.insert("echo".into(), Box::new(Echo));
         Shell { builtins }
     }
 
