@@ -1,5 +1,10 @@
 use std::collections::HashMap;
+use std::env;
+use std::fs;
 use std::io::{self, Write};
+use std::path::Path;
+use std::os::unix::fs::PermissionsExt;
+use std::str;
 
 use crate::builtins::command::Command;
 use crate::builtins::echo::Echo;
@@ -7,12 +12,15 @@ use crate::builtins::exit::Exit;
 use crate::builtins::r#type::Type;
 
 pub enum ShellAction {
+    CachePath { cmd: String, path: String },
     Continue,
     Exit(i32),
 }
 
 pub struct Shell {
     pub builtins: HashMap<String, Box<dyn Command>>,
+    pub exec_map: HashMap<String, String>,
+    pub path: Vec<String>,
 }
 
 impl Shell {
@@ -23,10 +31,20 @@ impl Shell {
         builtins.insert("echo".into(), Box::new(Echo));
         builtins.insert("type".into(), Box::new(Type));
 
-        Shell { builtins }
+        let exec_map = HashMap::new();
+        let mut path: Vec<String> = Vec::new();
+
+        if let Ok(path_str) = env::var("PATH") {
+            path = path_str
+                .split(":")
+                .map(|i| i.to_string())
+                .collect::<Vec<String>>();
+        }
+
+        Shell { builtins, exec_map, path }
     }
 
-    pub fn run_loop(&self) {
+    pub fn run_loop(&mut self) {
         loop {
             let input = self.prompt();
 
@@ -34,13 +52,42 @@ impl Shell {
                 continue;
             }
 
-            let action = self.execute_command(input);
+            let actions = self.execute_command(input);
 
-            match action {
-                ShellAction::Continue => continue,
-                ShellAction::Exit(code) => std::process::exit(code),
+            for action in actions {
+                match action {
+                    ShellAction::CachePath { cmd, path } => {
+                        self.exec_map.insert(cmd, path);
+                    },
+                    ShellAction::Continue => continue,
+                    ShellAction::Exit(code) => std::process::exit(code),
+                }
             }
         }
+    }
+
+    pub fn find_executable(&self, name: &str) -> Option<String> {
+        if let Some(exec_path) = self.exec_map.get(name) {
+            return Some(exec_path.to_string());
+        }
+
+        let paths = &self.path.clone();
+        for dir in paths {
+            let path = Path::new(&dir).join(name);
+
+            if let Ok(metadata) = fs::metadata(&path) {
+                let permissions = metadata.permissions();
+                let mode = permissions.mode();
+
+                // check for 'execute' bit
+                if mode & 0o111 != 0 && metadata.is_file() {
+                    let path_str = path.to_string_lossy().to_string();
+                    return Some(path_str);
+                }
+            }
+        }
+
+        return None;
     }
 
     fn prompt(&self) -> String {
@@ -54,17 +101,17 @@ impl Shell {
         return trimmed_input.to_string();
     }
 
-    fn execute_command(&self, input: String) -> ShellAction {
+    fn execute_command(&mut self, input: String) -> Vec<ShellAction> {
         let mut split_input: Vec<&str> = input.split(' ').collect();
         let args = split_input.split_off(1);
         let name = split_input[0];
 
         if let Some(cmd) = self.builtins.get(name) {
-            return cmd.execute(args, &self);
+            return cmd.execute(args, self);
         } else {
             eprintln!("{}: command not found", name);
             // return code 127, probably will need that
-            return ShellAction::Continue;
+            return vec![ShellAction::Continue];
         }
     }
 }

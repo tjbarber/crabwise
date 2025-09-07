@@ -4,6 +4,6 @@ mod builtins;
 mod shell;
 
 fn main() {
-    let shell = Shell::new();
+    let mut shell = Shell::new();
     shell.run_loop();
 }

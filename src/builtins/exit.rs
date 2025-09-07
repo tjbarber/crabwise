@@ -4,7 +4,7 @@ use crate::shell::{Shell, ShellAction};
 pub struct Exit;
 
 impl Command for Exit {
-    fn execute(&self, _: Vec<&str>, _: &Shell) -> ShellAction {
-        return ShellAction::Exit(0);
+    fn execute(&self, _: Vec<&str>, _: &Shell) -> Vec<ShellAction> {
+        return vec![ShellAction::Exit(0)];
     }
 }

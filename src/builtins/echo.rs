@@ -4,8 +4,8 @@ use crate::shell::{Shell, ShellAction};
 pub struct Echo;
 
 impl Command for Echo {
-    fn execute(&self, args: Vec<&str>, _: &Shell) -> ShellAction {
+    fn execute(&self, args: Vec<&str>, _: &Shell) -> Vec<ShellAction> {
         println!("{}", args.join(" "));
-        return ShellAction::Continue;
+        return vec![ShellAction::Continue];
     }
 }
