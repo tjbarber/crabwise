@@ -3,10 +3,11 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
+use std::process::Command;
 use std::os::unix::fs::PermissionsExt;
 use std::str;
 
-use crate::builtins::command::Command;
+use crate::builtins::builtin_command::BuiltinCommand;
 use crate::builtins::echo::Echo;
 use crate::builtins::exit::Exit;
 use crate::builtins::r#type::Type;
@@ -18,14 +19,14 @@ pub enum ShellAction {
 }
 
 pub struct Shell {
-    pub builtins: HashMap<String, Box<dyn Command>>,
+    pub builtins: HashMap<String, Box<dyn BuiltinCommand>>,
     pub exec_map: HashMap<String, String>,
     pub path: Vec<String>,
 }
 
 impl Shell {
     pub fn new() -> Self {
-        let mut builtins: HashMap<String, Box<dyn Command>> = HashMap::new();
+        let mut builtins: HashMap<String, Box<dyn BuiltinCommand>> = HashMap::new();
 
         builtins.insert("exit".into(), Box::new(Exit));
         builtins.insert("echo".into(), Box::new(Echo));
@@ -108,10 +109,19 @@ impl Shell {
 
         if let Some(cmd) = self.builtins.get(name) {
             return cmd.execute(args, self);
-        } else {
-            eprintln!("{}: command not found", name);
-            // return code 127, probably will need that
+        } else if let Some(cmd) = self.find_executable(name) {
+            Command::new(cmd)
+                .args(args)
+                .spawn()
+                .expect("i don't know what this does")
+                .wait()
+                .expect("failed to wait on child");
+
             return vec![ShellAction::Continue];
         }
+
+        eprintln!("{}: command not found", name);
+        // return code 127, probably will need that
+        return vec![ShellAction::Continue];
     }
 }

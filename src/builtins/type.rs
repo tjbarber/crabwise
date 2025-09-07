@@ -1,9 +1,9 @@
-use crate::builtins::command::Command;
+use crate::builtins::builtin_command::BuiltinCommand;
 use crate::shell::{Shell, ShellAction};
 
 pub struct Type;
 
-impl Command for Type {
+impl BuiltinCommand for Type {
     fn execute(&self, args: Vec<&str>, shell: &Shell) -> Vec<ShellAction> {
         let mut actions: Vec<ShellAction> = Vec::new();
         for arg in args {
