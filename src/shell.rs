@@ -4,6 +4,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use std::os::unix::process::CommandExt;
 use std::os::unix::fs::PermissionsExt;
 use std::str;
 
@@ -110,7 +111,14 @@ impl Shell {
         if let Some(cmd) = self.builtins.get(name) {
             return cmd.execute(args, self);
         } else if let Some(cmd) = self.find_executable(name) {
-            Command::new(cmd)
+            // I want to find a better way of doing this but for now
+            // I think this is fine
+            let full_path = cmd.clone();
+            let path = Path::new(&cmd);
+            let file_name = path.file_name().unwrap();
+            
+            Command::new(full_path)
+                .arg0(file_name)
                 .args(args)
                 .spawn()
                 .expect("i don't know what this does")
