@@ -9,10 +9,11 @@ use std::os::unix::fs::PermissionsExt;
 use std::str;
 
 use crate::builtins::builtin_command::BuiltinCommand;
+use crate::builtins::cd::Cd;
 use crate::builtins::echo::Echo;
 use crate::builtins::exit::Exit;
-use crate::builtins::r#type::Type;
 use crate::builtins::pwd::Pwd;
+use crate::builtins::r#type::Type;
 
 pub enum ShellAction {
     CachePath { cmd: String, path: String },
@@ -30,10 +31,11 @@ impl Shell {
     pub fn new() -> Self {
         let mut builtins: HashMap<String, Box<dyn BuiltinCommand>> = HashMap::new();
 
-        builtins.insert("exit".into(), Box::new(Exit));
+        builtins.insert("cd".into(), Box::new(Cd));
         builtins.insert("echo".into(), Box::new(Echo));
-        builtins.insert("type".into(), Box::new(Type));
+        builtins.insert("exit".into(), Box::new(Exit));
         builtins.insert("pwd".into(), Box::new(Pwd));
+        builtins.insert("type".into(), Box::new(Type));
 
         let exec_map = HashMap::new();
         let mut path: Vec<String> = Vec::new();

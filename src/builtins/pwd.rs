@@ -12,8 +12,8 @@ impl BuiltinCommand for Pwd {
             return vec![ShellAction::Continue];
         }
 
-        let current_path = env::var("PWD").expect("if PWD isn't set we have bigger problems.");
-        println!("{}", current_path);
+        let current_path = env::current_dir().expect("if PWD isn't set we have bigger problems.");
+        println!("{}", current_path.display());
 
         return vec![ShellAction::Continue];
     }
