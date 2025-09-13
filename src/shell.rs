@@ -12,6 +12,7 @@ use crate::builtins::builtin_command::BuiltinCommand;
 use crate::builtins::echo::Echo;
 use crate::builtins::exit::Exit;
 use crate::builtins::r#type::Type;
+use crate::builtins::pwd::Pwd;
 
 pub enum ShellAction {
     CachePath { cmd: String, path: String },
@@ -32,6 +33,7 @@ impl Shell {
         builtins.insert("exit".into(), Box::new(Exit));
         builtins.insert("echo".into(), Box::new(Echo));
         builtins.insert("type".into(), Box::new(Type));
+        builtins.insert("pwd".into(), Box::new(Pwd));
 
         let exec_map = HashMap::new();
         let mut path: Vec<String> = Vec::new();
