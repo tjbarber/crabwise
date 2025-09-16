@@ -12,8 +12,13 @@ impl BuiltinCommand for Cd{
             return vec![ShellAction::Continue];
         }
 
-        let dir = args[0];
-        let result = env::set_current_dir(dir);
+        let mut dir = args[0].to_string();
+
+        if dir == "~" {
+            dir = env::var("HOME").unwrap();
+        } 
+
+        let result = env::set_current_dir(&dir);
        
         // TODO: Return error codes from ShellAction::Continue
         let _ = match result {
