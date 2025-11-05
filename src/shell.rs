@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+use std::os::unix::fs::PermissionsExt;
+use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::Command;
-use std::os::unix::process::CommandExt;
-use std::os::unix::fs::PermissionsExt;
 use std::str;
 
 use crate::builtins::builtin_command::BuiltinCommand;
@@ -47,7 +47,11 @@ impl Shell {
                 .collect::<Vec<String>>();
         }
 
-        Shell { builtins, exec_map, path }
+        Shell {
+            builtins,
+            exec_map,
+            path,
+        }
     }
 
     pub fn run_loop(&mut self) {
@@ -64,7 +68,7 @@ impl Shell {
                 match action {
                     ShellAction::CachePath { cmd, path } => {
                         self.exec_map.insert(cmd, path);
-                    },
+                    }
                     ShellAction::Continue => continue,
                     ShellAction::Exit(code) => std::process::exit(code),
                 }
@@ -108,7 +112,7 @@ impl Shell {
     }
 
     fn execute_command(&mut self, input: String) -> Vec<ShellAction> {
-        let mut split_input: Vec<&str> = input.split(' ').collect();
+        let mut split_input: Vec<&str> = self.parse_args(input.as_str());
         let args = split_input.split_off(1);
         let name = split_input[0];
 
@@ -120,7 +124,7 @@ impl Shell {
             let full_path = cmd.clone();
             let path = Path::new(&cmd);
             let file_name = path.file_name().unwrap();
-            
+
             Command::new(full_path)
                 .arg0(file_name)
                 .args(args)
@@ -135,5 +139,26 @@ impl Shell {
         eprintln!("{}: command not found", name);
         // return code 127, probably will need that
         return vec![ShellAction::Continue];
+    }
+
+    fn parse_args<'a>(&self, input: &'a str) -> Vec<&'a str> {
+        let mut tokens = Vec::new();
+
+        // I can't split because I can no longer split on spaces
+        // because 'hello world' is now one token
+        // I don't want to use a regex because that's going to be a pain in the ass to maintain
+        //
+        // what I think the rules are:
+        //
+        // 1. an arg like --help is a token
+        // 2. a string wrapped in single quotes is a token
+        // 3. if two strings don't have a space between them like 'hello''world' that will be
+        //    concatencated as 'helloworld'
+        // 4. Two strings that are wrapped in double quotes are the same as single quotes but
+        //    will support string interpolation
+        //
+        //    does it make sense then to just loop over input and
+
+        return tokens;
     }
 }
